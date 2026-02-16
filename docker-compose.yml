@@ -1,0 +1,64 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_DIALECT=${DB_DIALECT}
+      - PORT=${PORT}
+      - NODE_ENV=${NODE_ENV}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - CALLBACK_URL=${CALLBACK_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - VIRTUAL_HOST=customer.app.api.dev.quickeats.lk
+      - LETSENCRYPT_HOST=customer.app.api.dev.quickeats.lk
+      - LETSENCRYPT_EMAIL=your_email@example.com
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - app-network
+      - proxy-network
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+    environment:
+      - DEFAULT_HOST=customer.app.api.dev.quickeats.lk
+    networks:
+      - proxy-network
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs:rw
+    depends_on:
+      - nginx-proxy
+    networks:
+      - proxy-network
+
+networks:
+  app-network:
+    driver: bridge
+  proxy-network:
+    driver: bridge

@@ -1,0 +1,31 @@
+const OrderService = require('../services/order.service');
+
+exports.findAll = async (req, res, next) => {
+    try {
+        const orders = await OrderService.findAll();
+        res.status(200).json(orders);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.search = async (req, res, next) => {
+    try {
+        const query = req.query;
+        const orders = await OrderService.search(query);
+        console.log(orders);
+        res.status(200).json(orders);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.save = async (req, res, next) => {
+    try {
+        const orderData = req.body;
+        const newOrder = await OrderService.save(orderData);
+        res.status(201).json(newOrder);
+    } catch (error) {
+        next(error);
+    }
+};

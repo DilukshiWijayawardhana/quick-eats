@@ -1,0 +1,14 @@
+const express = require("express");
+const authController = require("../controllers/auth.controller");
+
+const router = express.Router();
+
+const authRoutes = require("../routes/auth.routes");
+const foodRoutes = require("../routes/food.routes");
+const shopRoutes = require("../routes/shop.routes");
+const orderRoutes = require("../routes/order.routes");
+
+router.use("/auth", authRoutes);
+router.use("/food", foodRoutes);
+router.use("/shop", shopRoutes);
+router.use("/orders", orderRoutes);

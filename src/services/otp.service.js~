@@ -1,0 +1,67 @@
+const { Op } = require("sequelize");
+const OTP = require("../models/otp.model");
+const User = require("../models/customer.model");
+const { AppError } = require("../middlewares/error/custom.error");
+const {post} = require("axios");
+
+class OTPService {
+  static async generateOTP(mobile) {
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // OTP expires in 2 minutes
+    const createdAt = new Date();
+
+    const user = await User.findOne({ where: { mobile } });
+
+    if (!user) {
+      throw new AppError("User Not Found", 406);
+    }
+
+    await OTP.create({
+      mobile,
+      otp,
+      created_at: createdAt,
+      expires_at: expiresAt,
+    });
+
+    const url = 'http://communication.platform.api.dev/api/send-sms';
+
+    const data = {
+      mobile: mobile,
+      otp: otp
+    };
+    await post(url, data, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  static async verifyOTP(mobile, otp) {
+    try {
+      const currentTime = new Date();
+
+      const otpEntry = await OTP.findOne({
+        where: {
+          mobile,
+          otp,
+          expires_at: {
+            [Op.gt]: currentTime,
+          },
+        },
+      });
+
+      if (!otpEntry) {
+        return false;
+      }
+
+      await otpEntry.destroy();
+      return true;
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      return false;
+    }
+  }
+
+}
+
+module.exports = OTPService;

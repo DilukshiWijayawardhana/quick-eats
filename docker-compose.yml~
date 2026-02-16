@@ -1,0 +1,22 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_DIALECT=${DB_DIALECT}
+      - PORT=${PORT}
+      - NODE_ENV=${NODE_ENV}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - CALLBACK_URL=${CALLBACK_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+    volumes:
+      - .:/app
+      - /app/node_modules

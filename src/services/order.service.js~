@@ -1,0 +1,76 @@
+const Order = require("../models/order.model");
+const OrderProduct = require("../models/orderProduct.model");
+const Product = require("../models/food.model");
+const Shop = require("../models/shop.model");
+
+exports.findAll = async () => {
+  return Order.findAll({
+    include: [
+      {
+        model: OrderProduct,
+        as: "orderProducts",
+        include: [
+          {
+            model: Product,
+            as: "product",
+          },
+        ],
+      },
+    ],
+  });
+};
+
+exports.search = async (query) => {
+  return Order.findAll({
+    where: query,
+    include: [
+      {
+        model: OrderProduct,
+        as: "orderProducts",
+        include: [
+          {
+            model: Product,
+            as: "product",
+          },
+        ],
+      },
+    ],
+  });
+};
+
+exports.save = async (orderData) => {
+  const { customer, shop, status, orderProducts } = orderData;
+
+  // Verify if the shop exists
+  const shopExists = await Shop.findByPk(shop);
+  if (!shopExists) {
+    throw new Error("Shop not found");
+  }
+
+  // Calculate total price and verify if the products exist
+  let totalPrice = 0;
+  for (const orderProduct of orderProducts) {
+    const product = await Product.findByPk(orderProduct.productId);
+    if (!product) {
+      throw new Error(`Product with id ${orderProduct.productId} not found!`);
+    }
+    totalPrice += product.price * orderProduct.quantity;
+  }
+
+  const newOrder = await Order.create(
+    { customer, shop, totalPrice, status },
+    { include: ["orderProducts"] }
+  );
+
+  if (orderProducts && orderProducts.length > 0) {
+    for (const orderProduct of orderProducts) {
+      await OrderProduct.create({
+        order: newOrder.id,
+        productId: orderProduct.productId,
+        quantity: orderProduct.quantity,
+        price: orderProduct.price,
+      });
+    }
+  }
+  return newOrder;
+};

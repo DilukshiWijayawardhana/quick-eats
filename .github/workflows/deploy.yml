@@ -1,0 +1,26 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'release-*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Install SSHpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy to Ubuntu VPS
+        run: |
+          sshpass -p ${{ secrets.VPS_PASSWORD }} ssh -o StrictHostKeyChecking=no root@63.250.41.87 -p 22 << 'EOF'
+            cd ~/quickeats/quickeats-customer-app-backend/
+            git pull
+            docker-compose down --volumes --remove-orphans
+            docker system prune -af
+            docker-compose build --no-cache
+            docker-compose up --build -d
+            docker ps
+          EOF

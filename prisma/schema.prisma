@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model customers {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  email      String   @unique
+  mobile     String   @unique
+  is_active  Boolean  @default(true) @map("isActive")
+  created_at DateTime @default(now()) @map("createdAt")
+  updated_at DateTime @updatedAt @map("updatedAt")
+
+  // Relations
+  orders orders[]
+
+  @@map("customers")
+}
+
+model otp {
+  id         Int      @id @default(autoincrement())
+  mobile     String   @db.VarChar(20)
+  otp        String   @db.VarChar(6)
+  created_at DateTime @db.DateTime(0)
+  expires_at DateTime @db.DateTime(0)
+
+  @@map("otp")
+}
+
+model shops {
+  id                  Int       @id @default(autoincrement())
+  owner_name          String    @map("ownerName")
+  email               String    @unique
+  mobile              String    @unique
+  nic                 String    @unique
+  name                String?   @unique
+  address             String?
+  description         String?
+  category            String?
+  phone               String?
+  open_time           DateTime? @map("openTime")
+  closing_time        DateTime? @map("closingTime")
+  image               String?
+  bank_name           String?   @map("bankName")
+  account_number      String?   @unique @map("accountNumber")
+  branch              String?
+  account_holder_name String?   @map("accountHolderName")
+  longitude           Float?
+  latitude            Float?
+  is_active           Boolean   @default(true) @map("isActive")
+  created_at          DateTime  @default(now()) @map("created_at")
+  updated_at          DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  orders orders[]
+  foods  foods[]
+
+  @@map("shops")
+}
+
+model foods {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  price       Float    @db.Float
+  description String?  @db.VarChar(255)
+  image       String?  @db.VarChar(255)
+  stock       Int
+  shop_id     Int
+  created_at  DateTime @db.DateTime(0)
+  updated_at  DateTime @db.DateTime(0)
+
+  // Relations
+  shops         shops           @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  orderproducts orderproducts[]
+  food_variants food_variants[]
+
+  @@index([shop_id], map: "shop_id")
+  @@map("foods")
+}
+
+model food_variants {
+  id                    Int      @id @default(autoincrement())
+  food_id               Int
+  size                  String?
+  spiciness             String?
+  crust_type            String?
+  sauce_type            String?
+  meat_option           String?
+  cooking_preference    String?
+  sweetness_level       String?
+  dressing_type         String?
+  add_ons               String?
+  allergy_consideration String?
+  price                 Float
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now()) @map("created_at")
+  updated_at            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  foods         foods           @relation(fields: [food_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  orderproducts orderproducts[]
+
+  @@map("food_variants")
+}
+
+model orders {
+  id         Int      @id @default(autoincrement())
+  customer   Int
+  shop       Int
+  totalPrice Float    @map("totalPrice")
+  status     String   @default("Pending")
+  created_at DateTime @default(now()) @map("createdAt")
+  updated_at DateTime @updatedAt @map("updatedAt")
+
+  // Relations
+  customers     customers       @relation(fields: [customer], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  shops         shops           @relation(fields: [shop], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  orderproducts orderproducts[]
+
+  @@map("Orders")
+}
+
+model orderproducts {
+  id            Int      @id @default(autoincrement())
+  order         Int
+  productId     Int      @map("productId")
+  foodVariantId Int?     @map("foodVariantId")
+  quantity      Int      @default(1)
+  price         Float
+  created_at    DateTime @default(now()) @map("createdAt")
+  updated_at    DateTime @updatedAt @map("updatedAt")
+
+  // Relations
+  orders        orders         @relation(fields: [order], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  foods         foods          @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  food_variants food_variants? @relation(fields: [foodVariantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("OrderProducts")
+}
